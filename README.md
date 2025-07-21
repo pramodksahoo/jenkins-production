@@ -175,6 +175,8 @@ kubectl apply -f ingress.yaml
 
 ### 📈 Step 6: Enable Horizontal Pod Autoscaler (HPA)
 
+**Note**: This will not help for single node cluster
+
 **File: hpa.yaml**:
 
 ```yaml
@@ -238,3 +240,5 @@ kubectl apply -f hpa.yaml
 *Production Tip*: Schedule maintenance windows and notify teams via Slack integrations.
 
 This enhanced guide ensures a robust, production-optimized Jenkins deployment. For issues, inspect logs with `kubectl logs <pod-name> -n jenkins` and consult AWS/Jenkins documentation.
+
+***If you have havy workload please checkitout [cloudbees Jenkins](https://docs.cloudbees.com/docs/cloudbees-ci/latest/eks-install-guide/installing-eks-using-helm)***
