@@ -1,24 +1,24 @@
 controller:
+  componentName: "jenkins-controller"
   # Jenkins LTS version control: Update this tag for upgrades (e.g., to "2.452.2-lts")
   image:
     repository: "jenkins/jenkins"
-    tag: "2.440.2-lts"
+    tag: "2.504.3-lts"
   replicas: 4  # High availability with 4 controller pods
-  serviceType: LoadBalancer  # Exposes Jenkins via AWS ELB
+  serviceEnabled: true  # Exposes Jenkins via AWS ELB
+  serviceType: ClusterIP
   servicePort: 8080
   targetPort: 8080
-  persistence:
-    enabled: true
-    existingClaim: jenkins-efs-pvc  # Pre-created EFS PVC for JENKINS_HOME and logs
-    size: 100Gi
-    accessMode: ReadWriteMany
+  admin:
+    username: "admin"
+    createSecret: true
   resources:
     requests:
+      cpu: "1"
+      memory: "2Gi"
+    limits:
       cpu: "2"
       memory: "4Gi"
-    limits:
-      cpu: "4"
-      memory: "8Gi"
   livenessProbe:
     enabled: true
     initialDelaySeconds: 90
@@ -34,86 +34,86 @@ controller:
     failureThreshold: 3
     successThreshold: 1
   installPlugins:
-    - kubernetes:1.31.0  # For dynamic Kubernetes agents
-    - workflow-job:2.42
-    - workflow-aggregator:2.7
-    - credentials:2.6.1
-    - git:4.11.0
-    - configuration-as-code:1.55  # For JCasC
-    - blueocean:1.25.5  # UI enhancements
-    - pipeline-groovy-lib:2.0
-    - job-dsl:1.79  # For scripted job creation
-    - matrix-auth:3.0  # Role-based access
-    - prometheus:2.0.11  # Monitoring integration
-    - cloudbees-disk-usage-simple:0.10  # Disk usage monitoring
+    - kubernetes
+    - workflow-job
+    - workflow-aggregator
+    - credentials
+    - git
+    - configuration-as-code
+    - blueocean
+    - pipeline-groovy-lib
+    - job-dsl
+    - matrix-auth
+    - prometheus
+    - cloudbees-disk-usage-simple
+  installLatestPlugins: true
+
   JCasC:
-    enabled: true
-    configScripts:
-      security-config: |-
-        jenkins:
-          securityRealm:
-            local:
-              allowsSignup: false
-              users:
-                - id: "admin"
-                  password: "${ADMIN_PASSWORD}"  # Reference from Kubernetes secret
-          authorizationStrategy:
-            loggedInUsersCanDoAnything:
-              allowAnonymousRead: false
-      kubernetes-cloud: |-
-        jenkins:
-          clouds:
-            - kubernetes:
-                name: "kubernetes"
-                serverUrl: "https://kubernetes.default"
-                namespace: "jenkins"
-                skipTlsVerify: true
-                jenkinsUrl: "http://jenkins:8080"
-                containerCapStr: "20"
-                templates:
-                  - name: "polyglot-agent"
-                    labels: "polyglot"
-                    minimum: 0  # On-demand; set to 2 for always-available agents
-                    idleMinutes: 10
-                    containers:
-                      - name: "jnlp"
-                        image: "jenkins/inbound-agent:latest"
-                        ttyEnabled: true
-                        resourceRequestCpu: "200m"
-                        resourceRequestMemory: "512Mi"
-                        resourceLimitCpu: "1"
-                        resourceLimitMemory: "1Gi"
-                      - name: "java"
-                        image: "maven:3.9.6-eclipse-temurin-17"
-                        command: ["cat"]
-                        ttyEnabled: true
-                      - name: "python"
-                        image: "python:3.12-alpine"
-                        command: ["cat"]
-                        ttyEnabled: true
-                      - name: "node"
-                        image: "node:20-alpine"
-                        command: ["cat"]
-                        ttyEnabled: true
-                    volumes:
-                      - persistentVolumeClaim:
-                          claimName: jenkins-efs-pvc
-                          mountPath: "/var/jenkins_home"
-                    yamlMergeStrategy: "override"
-                    nodeUsageMode: "NORMAL"
-      global-libraries: |-
-        unclassified:
-          globalLibraries:
-            libraries:
-              - name: "jenkins-shared-lib"
-                retriever:
-                  modernSCM:
-                    scm:
-                      git:
-                        remote: "https://github.com/your-org/jenkins-shared-lib.git"
-                        credentialsId: "git-creds"
-  rbac:
-    create: true
+    # -- Enables default Jenkins configuration via configuration as code plugin
+    defaultConfig: true
+    securityRealm: |-
+      local:
+        allowsSignup: false
+        enableCaptcha: false
+        users:
+        - id: "${chart-admin-username}"
+          name: "Jenkins Admin"
+          password: "${chart-admin-password}"
+    authorizationStrategy: |-
+      loggedInUsersCanDoAnything:
+        allowAnonymousRead: false
+    logging:
+        configuration:
+          # -- Enables custom log config utilizing using the settings below.
+          override: false
+          logLevel: INFO
+          formatter: JSON
+          logToConsole: true
+          logToFile: false
+          maxBytes: 1024
+          backupCount: 3
+    kubernetes-cloud: |-
+      jenkins:
+        clouds:
+          - kubernetes:
+              name: "kubernetes"
+              serverUrl: "https://kubernetes.default"
+              namespace: "jenkins"
+              skipTlsVerify: true
+              jenkinsUrl: "http://jenkins:8080"
+              containerCapStr: "20"
+              templates:
+                - name: "polyglot-agent"
+                  labels: "polyglot"
+                  minimum: 0
+                  idleMinutes: 10
+                  containers:
+                    - name: "jnlp"
+                      image: "jenkins/inbound-agent:latest"
+                      ttyEnabled: true
+                      resourceRequestCpu: "200m"
+                      resourceRequestMemory: "512Mi"
+                      resourceLimitCpu: "1"
+                      resourceLimitMemory: "1Gi"
+                    - name: "java"
+                      image: "maven:3.9.6-eclipse-temurin-17"
+                      command: ["cat"]
+                      ttyEnabled: true
+                    - name: "python"
+                      image: "python:3.12-alpine"
+                      command: ["cat"]
+                      ttyEnabled: true
+                    - name: "node"
+                      image: "node:20-alpine"
+                      command: ["cat"]
+                      ttyEnabled: true
+                  volumes:  # Corrected: Ensure this is a list of maps
+                    - persistentVolumeClaim:  # Use map format for each volume
+                        claimName: "efs-jenkins-pvc"  # Match your PVC name
+                        mountPath: "/var/jenkins_home"
+                  yamlMergeStrategy: "override"
+                  nodeUsageMode: "NORMAL"
+
   metrics:
     enabled: true  # Enables Prometheus metrics endpoint at /prometheus
     port: 8080  # Optional: Customize if needed (default matches servicePort)
@@ -121,8 +121,19 @@ controller:
   backup:
     enabled: false  # Enable and configure for scheduled backups if needed
   javaOpts: "-Djenkins.model.Jenkins.slaveAgentPort=50000 -Djenkins.install.runSetupWizard=false"
-  adminUser: "admin"  # Overridden by JCasC for security
-  adminPassword: ""  # Use JCasC or secrets instead
+  disableCSRF: false  # Keep enabled for security
+  usePodSecurityPolicy: true
+rbac:
+  create: true
+  # -- Whether the Jenkins service account should be able to read Kubernetes secrets
+  readSecrets: false
+
+persistence:
+  # -- Enable the use of a Jenkins PVC
+  enabled: true
+  existingClaim: efs-jenkins-pvc # Pre-created EFS PVC for JENKINS_HOME and logs
+  storageClass: efs-jenkins-sc
+
 agent:
   enabled: true
   resources:
@@ -135,8 +146,5 @@ agent:
   podTemplates: {}  # Managed via JCasC for consistency
 networkPolicy:
   enabled: true  # Restricts network access for security
-master:
-  disableCSRF: false  # Keep enabled for security
-  usePodSecurityPolicy: true
 podSecurityContext: {}
 containerSecurityContext: {}
