@@ -1,14 +1,16 @@
 # Production-Ready Jenkins on Amazon EKS: Comprehensive Deployment Guide
 
-This guide provides an enhanced, step-by-step walkthrough for deploying a highly available, scalable, and secure Jenkins cluster on Amazon EKS. It includes 4 controller replicas for redundancy, Amazon EFS for persistent shared storage, dynamic Kubernetes agents for polyglot builds (Java, Python, Node.js), Configuration as Code (JCasC) for automation, NGINX Ingress for secure access, and Horizontal Pod Autoscaler (HPA) for dynamic scaling. Emphasizing production readiness, this setup supports zero-downtime upgrades, automated backups, advanced monitoring, and cost optimization to handle enterprise workloads efficiently.
+This guide provides an enhanced, step-by-step walkthrough for deploying a highly available, scalable, and secure Jenkins cluster on Amazon EKS. It includes 1 controller statefulset replicas for redundancy, Amazon EFS for persistent shared storage, dynamic Kubernetes agents for polyglot builds (Java, Python, Node.js), Configuration as Code (JCasC) for automation, NGINX Ingress for secure access, and Horizontal Pod Autoscaler (HPA) for dynamic scaling. Emphasizing production readiness, this setup supports zero-downtime upgrades, automated backups, advanced monitoring, and cost optimization to handle enterprise workloads efficiently.
 
-The architecture diagram illustrates the setup with color-coded components (e.g., orange for controllers, green for agents, blue for storage).
+The architecture diagram illustrates the setup with color-coded components (e.g., orange for controllers, green for agents, pink for storage).
+
+***This Jenkins setup is designed for small organizations with a light workload, utilizing the open-source version of Jenkins and it's support a single master node within the Jenkins cluster.***
 
 ## 🧰 Architecture Overview
 
 This project utilizes the official Jenkins Helm chart to establish a resilient CI/CD platform on Kubernetes, seamlessly integrated with AWS services for persistence, scaling, and security.
 
->![Jenkins Architecture](jenkins-digram.svg) *High-Availability CI/CD Pipeline on EKS*
+>![Jenkins Architecture](jenkins-cluster.svg) *High-Availability CI/CD Pipeline on EKS*
 
 Key components include:
 
@@ -47,6 +49,7 @@ Drawing from AWS Well-Architected Framework and Jenkins best practices, implemen
 - **Compliance and Auditing**: Enable Jenkins audit logging to S3, enforce two-factor authentication, and align with standards like SOC 2 by restricting access via network policies.
 
 Adopting these practices minimizes downtime, reduces costs, and ensures compliance in production.
+
 
 ## 🛠️ Step-by-Step Installation Guide
 
