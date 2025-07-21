@@ -116,6 +116,8 @@ controller:
     create: true
   metrics:
     enabled: true  # Enables Prometheus metrics endpoint at /prometheus
+    port: 8080  # Optional: Customize if needed (default matches servicePort)
+    path: "/prometheus"  # Optional: Default path
   backup:
     enabled: false  # Enable and configure for scheduled backups if needed
   javaOpts: "-Djenkins.model.Jenkins.slaveAgentPort=50000 -Djenkins.install.runSetupWizard=false"
