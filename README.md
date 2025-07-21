@@ -241,4 +241,4 @@ kubectl apply -f hpa.yaml
 
 This enhanced guide ensures a robust, production-optimized Jenkins deployment. For issues, inspect logs with `kubectl logs <pod-name> -n jenkins` and consult AWS/Jenkins documentation.
 
-***If you have havy workload please checkitout [cloudbees Jenkins](https://docs.cloudbees.com/docs/cloudbees-ci/latest/eks-install-guide/installing-eks-using-helm)***
+> **Note:** If you have a heavy workload, consider using <a href="https://docs.cloudbees.com/docs/cloudbees-ci/latest/eks-install-guide/installing-eks-using-helm" target="_blank" rel="noopener noreferrer">CloudBees Jenkins</a>.
