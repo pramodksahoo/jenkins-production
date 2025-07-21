@@ -1,0 +1,21 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: jenkins-ingress
+  namespace: jenkins
+  annotations:
+    kubernetes.io/ingress.class: "nginx"  # Targets NGINX controller
+    nginx.ingress.kubernetes.io/rewrite-target: /$2  # Optional: Path rewrite
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"  # Enforce HTTPS
+spec:
+  rules:
+  - host: jenkins-prod-new.com
+    http:
+      paths:
+      - path: /(/|$)(.*)  # Matches all paths
+        pathType: Prefix
+        backend:
+          service:
+            name: jenkins
+            port:
+              number: 8080

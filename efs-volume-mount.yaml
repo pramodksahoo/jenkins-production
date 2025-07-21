@@ -1,0 +1,48 @@
+######## Define the Storage for JENKNIS shared volume for EFS ##################
+
+# StorageClass for the second EFS
+--- 
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: efs-jenkins-sc
+provisioner: efs.csi.aws.com
+parameters:
+  fileSystemId: fs-023543cbb1c8cd08c  # Your EFS file system ID
+  directoryPerms: "775"
+  gidRange: "1000-2000"
+reclaimPolicy: Delete
+volumeBindingMode: Immediate
+allowVolumeExpansion: true  # Add this line
+---
+# PersistentVolume for the second EFS
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: efs-jenkins-pv
+spec:
+  capacity:
+    storage: 999999001Gi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: efs-jenkins-sc
+  csi:
+    driver: efs.csi.aws.com
+    volumeHandle: fs-023543cbb1c8cd08c
+
+---
+# PersistentVolumeClaim for the second EFS
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: efs-jenkins-pvc
+  namespace: jenkins  # Specify the namespace for the PVC
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: efs-jenkins-sc
+  resources:
+    requests:
+      storage: 999999001Gi
